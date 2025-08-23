@@ -32,5 +32,5 @@ def parse_thrust_curve(filepath):
     return {"time": time, "thrust": thrust}
 
 
-ENG_PATH = os.path.join(os.path.dirname(__file__), "assets/AeroTech_M685W.eng")
+ENG_PATH = os.path.join(os.path.dirname(__file__), "../assets/AeroTech_M685W.eng")
 thrust_curve = parse_thrust_curve(ENG_PATH)
