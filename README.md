@@ -26,5 +26,5 @@
 1. Run the following command to launch the simulation editor:
 
 ```bash
-elodin editor rocket_sim.py
+elodin editor src/rocket_sim.py
 ```
