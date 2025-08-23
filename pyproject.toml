@@ -1,0 +1,13 @@
+[project]
+name = "elodin-rocket"
+version = "0.1.0"
+description = "Ballistic Rocket Max Range Simulation"
+requires-python = ">=3.12"
+dependencies = [
+    "elodin",
+    "jax",
+    "numpy",
+    "matplotlib",
+    "polar",
+]
+
