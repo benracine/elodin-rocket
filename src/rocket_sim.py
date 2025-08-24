@@ -24,8 +24,8 @@ launch_pos = jnp.array([0.0, 0.0, 0.5])
 direction = target - launch_pos
 direction = direction / jnp.linalg.norm(direction)
 
-# Set pitch angle to 15 degrees above the horizon for aiming
-pitch = 8.0  # degrees above horizontal
+# Set pitch angle for maximum range (optimized via range_optimizer.py)
+pitch = 35.0  # degrees above horizontal (optimized for maximum range)
 # Calculate yaw angle to aim toward the target in XY plane
 yaw = jnp.rad2deg(jnp.arctan2(direction[1], direction[0]))
 aim_euler = jnp.array([0.0, pitch, yaw])  # [Roll, Pitch, Yaw] in degrees
