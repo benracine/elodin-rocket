@@ -23,8 +23,8 @@
    uv sync
    ```
 
-1. Run the following command to launch the simulation editor:
+1. Run the suite of simulations using:
 
 ```bash
-elodin editor src/rocket_sim.py
+uv run python src/main.py run
 ```
