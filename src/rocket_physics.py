@@ -6,6 +6,7 @@ This module provides functions to compute Mach number, dynamic pressure,
 angle of attack, aerodynamic coefficients, and aerodynamic forces for a rocket.
 All functions are designed to be modular and reusable in the simulation pipeline.
 """
+
 import jax
 import jax.numpy as jnp
 import jax.numpy.linalg as la
@@ -15,7 +16,17 @@ import polars as pl
 import elodin as el
 
 from rocket_math_utils import aero_interp_table, to_coord
-from rocket_model import Wind, Mach, DynamicPressure, AngleOfAttack, AeroCoefs, AeroForce, CenterOfGravity, Motor, Thrust
+from rocket_model import (
+    Wind,
+    Mach,
+    DynamicPressure,
+    AngleOfAttack,
+    AeroCoefs,
+    AeroForce,
+    CenterOfGravity,
+    Motor,
+    Thrust,
+)
 from rocket_constants import thrust_vector_body_frame, a_ref, l_ref, xmc
 from thrust_curve import thrust_curve
 
@@ -29,6 +40,7 @@ aero_df = pl.from_dict({
     'CA': [1.121, 1.028, 0.9495, 0.9803, 0.6405, 0.5852, 0.4342, 0.217, 0.2942, 0.2873, 0.2591, 0.2032, 0.6405, 0.5988, 0.635, 0.6333, 1.121, 1.215, 1.246, 1.267, 1.242, 1.137, 1.051, 1.095, 0.6902, 0.6278, 0.4588, 0.2184, 0.2924, 0.2856, 0.2577, 0.2025, 0.6902, 0.6434, 0.6895, 0.6967, 1.242, 1.351, 1.392, 1.425, 1.851, 1.747, 1.621, 1.48, 0.9888, 0.8509, 0.658, 0.4269, 0.448, 0.4446, 0.4345, 0.418, 0.9888, 1.06, 1.111, 1.154, 1.851, 1.961, 2.03, 2.098],
     'CZR': [-1.092, -0.3878, 0.3984, 1.141, -1.141, -0.4069, 0.7324, 2.176, 0.0, 1.061, 2.368, 3.494, 1.141, 1.561, 2.483, 3.64, 1.092, 1.789, 2.577, 3.68, -1.191, -0.4161, 0.4355, 1.252, -1.274, -0.4526, 0.8073, 2.408, 0.0, 1.178, 2.63, 3.88, 1.274, 1.736, 2.755, 4.043, 1.191, 1.973, 2.844, 4.07, -1.609, -0.8494, 0.1373, 1.323, -1.639, -0.5395, 0.9159, 2.704, 0.0, 1.304, 2.894, 4.443, 1.639, 2.532, 3.576, 4.981, 1.609, 2.483, 3.481, 4.811]
 })  # fmt: skip
+
 
 @el.map
 def mach(p: el.WorldPos, v: el.WorldVel, w: Wind) -> tuple[Mach, DynamicPressure]:
@@ -45,13 +57,19 @@ def mach(p: el.WorldPos, v: el.WorldVel, w: Wind) -> tuple[Mach, DynamicPressure
     """
     # Standard atmosphere model (layered)
     atmosphere = {
-        "h": jnp.array([0.0, 11000.0, 20000.0, 32000.0, 47000.0, 51000.0, 71000.0, 84852.0]),
+        "h": jnp.array(
+            [0.0, 11000.0, 20000.0, 32000.0, 47000.0, 51000.0, 71000.0, 84852.0]
+        ),
         "T": jnp.array([15.0, -56.5, -56.5, -44.5, -2.5, -2.5, -58.5, -86.2]),
-        "p": jnp.array([101325.0, 22632.0, 5474.9, 868.02, 110.91, 66.939, 3.9564, 0.0]),
-        "d": jnp.array([1.225, 0.3639, 0.0880, 0.0132, 0.0014, 0.0009, 0.0001, 0.0])
+        "p": jnp.array(
+            [101325.0, 22632.0, 5474.9, 868.02, 110.91, 66.939, 3.9564, 0.0]
+        ),
+        "d": jnp.array([1.225, 0.3639, 0.0880, 0.0132, 0.0014, 0.0009, 0.0001, 0.0]),
     }
     altitude = p.linear()[2]  # Z component is altitude
-    temperature = jnp.interp(altitude, atmosphere["h"], atmosphere["T"]) + 273.15  # Kelvin
+    temperature = (
+        jnp.interp(altitude, atmosphere["h"], atmosphere["T"]) + 273.15
+    )  # Kelvin
     density = jnp.interp(altitude, atmosphere["h"], atmosphere["d"])
     specific_heat_ratio = 1.4
     specific_gas_constant = 287.05
@@ -104,7 +122,7 @@ def aero_coefs(mach: Mach, angle_of_attack: AngleOfAttack) -> AeroCoefs:
         jnp.abs(angle_of_attack) < 1e-6,
         lambda _: 1.0,
         lambda _: jnp.sign(angle_of_attack),
-        None
+        None,
     )
     # Interpolate coefficients using Mach and Alphac (AOA)
     coords = [
@@ -112,23 +130,27 @@ def aero_coefs(mach: Mach, angle_of_attack: AngleOfAttack) -> AeroCoefs:
         to_coord(aero_df["Delta"], 0.0),  # No fin deflection
         to_coord(aero_df["Alphac"], jnp.abs(angle_of_attack)),
     ]
-    coefs = jnp.array([
-        map_coordinates(coef, coords, 1, mode="nearest") for coef in aero
-    ])
+    coefs = jnp.array(
+        [map_coordinates(coef, coords, 1, mode="nearest") for coef in aero]
+    )
     # Output format matches simulation expectations
-    coefs = jnp.array([
-        0.0,                # Cl (roll moment, unused)
-        0.0,                # CnR (yaw moment, unused)
-        coefs[0] * aoa_sign,  # CmR (pitch moment)
-        coefs[1],             # CA (axial force)
-        coefs[2] * aoa_sign,  # CZR (normal force)
-        0.0,                # CYR (side force, unused)
-    ])
+    coefs = jnp.array(
+        [
+            0.0,  # Cl (roll moment, unused)
+            0.0,  # CnR (yaw moment, unused)
+            coefs[0] * aoa_sign,  # CmR (pitch moment)
+            coefs[1],  # CA (axial force)
+            coefs[2] * aoa_sign,  # CZR (normal force)
+            0.0,  # CYR (side force, unused)
+        ]
+    )
     return coefs
 
 
 @el.map
-def aero_forces(aero_coefs: AeroCoefs, xcg: CenterOfGravity, q: DynamicPressure) -> AeroForce:
+def aero_forces(
+    aero_coefs: AeroCoefs, xcg: CenterOfGravity, q: DynamicPressure
+) -> AeroForce:
     """
     Calculate aerodynamic forces and torques acting on the rocket.
 
@@ -175,6 +197,7 @@ def apply_aero_forces(p: el.WorldPos, f_aero: AeroForce, f: el.Force) -> el.Forc
 def gravity(f: el.Force, inertia: el.Inertia) -> el.Force:
     return f + el.SpatialForce(linear=jnp.array([0.0, 0.0, -9.81]) * inertia.mass())
 
+
 @el.system
 def thrust(
     tick: el.Query[el.SimulationTick],
@@ -186,6 +209,7 @@ def thrust(
     thrust = jnp.array(thrust_curve["thrust"])
     f_t = jnp.interp(t, time, thrust)
     return q.map(Thrust, lambda _: f_t)
+
 
 @el.map
 def apply_thrust(thrust: Thrust, f: el.Force, p: el.WorldPos) -> el.Force:

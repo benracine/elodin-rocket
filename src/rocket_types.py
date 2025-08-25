@@ -260,4 +260,3 @@ AccelSetpointSmooth = ty.Annotated[
         metadata={"element_names": "p,y", "priority": 100},
     ),
 ]
-

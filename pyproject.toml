@@ -9,5 +9,8 @@ dependencies = [
     "numpy",
     "matplotlib",
     "polar",
+    "ruff>=0.12.10",
+    "jnp>=2024.5",
 ]
+
 

@@ -4,6 +4,7 @@ rocket_math_utils.py
 Utility math functions for rocket simulation, including quaternion conversions
 and aerodynamic table interpolation.
 """
+
 import jax
 import jax.numpy as jnp
 import polars as pl
