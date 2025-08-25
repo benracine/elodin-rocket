@@ -29,3 +29,5 @@ Implement a simple loop:
 * Collect results into one Polars DataFrame.
 * E.g. find the greatest range associated with a positive Z.
 * Refine the analysis to include an interpolation process when the position flips from positive Z to negative Z between a time step in order to refine the accuract a bit.
+
+Also, explore Monte Carlo simulations. I had assumed that those only allowed for random perturbations in inputs and required connecting to AWS, but I haven't yet had time to explore that.
